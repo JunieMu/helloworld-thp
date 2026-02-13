@@ -10,45 +10,11 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const fetchCaptions = async () => {
-      const { data, error } = await supabase
-        .from("captions")
-        .select(`
-          *,
-          images (
-            url,
-            image_description
-          )
-        `);
-      if (error) {
-        setError(error.message);
-      } else {
-        setCaptions(data);
-      }
-      setLoading(false);
-    };
-
-    fetchCaptions();
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user || null);
-    });
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user || null);
-      }
-    );
-
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
-  }, []);
+  const [hasCheckedSession, setHasCheckedSession] = useState(false);
 
   const handleGoogleSignIn = async () => {
     try {
+      setLoading(true); // Indicate loading while redirecting
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -57,9 +23,12 @@ export default function Home() {
       });
       if (error) {
         setError(error.message);
+        setLoading(false);
       }
+      // If no error, redirect happens automatically, so loading remains true
     } catch (error: any) {
       setError(error.message);
+      setLoading(false);
     }
   };
 
@@ -68,18 +37,78 @@ export default function Home() {
       const { error } = await supabase.auth.signOut();
       if (error) {
         setError(error.message);
+      } else {
+        setUser(null); // Clear user state on sign out
+        setCaptions(null); // Clear captions
+        setHasCheckedSession(false); // Reset session check to trigger new sign-in attempt
       }
     } catch (error: any) {
       setError(error.message);
     }
   };
 
-  if (loading) {
+  useEffect(() => {
+    const checkSessionAndFetchData = async () => {
+      setLoading(true);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        setError(sessionError.message);
+        setLoading(false);
+        setHasCheckedSession(true);
+        return;
+      }
+
+      setUser(session?.user || null);
+
+      if (!session) {
+        console.log("No active session found. Initiating Google sign-in...");
+        await handleGoogleSignIn(); // Automatically redirect to sign in
+      } else {
+        // Only fetch captions if a user is logged in
+        const { data, error: captionsError } = await supabase
+          .from("captions")
+          .select(`
+            *,
+            images (
+              url,
+              image_description
+            )
+          `);
+        if (captionsError) {
+          setError(captionsError.message);
+        } else {
+          setCaptions(data);
+        }
+        setLoading(false);
+      }
+      setHasCheckedSession(true);
+    };
+
+    if (!hasCheckedSession) {
+      checkSessionAndFetchData();
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user || null);
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+          setHasCheckedSession(false); // Re-check session and re-fetch data on auth change
+        }
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [hasCheckedSession]); // Rerun effect when hasCheckedSession changes to trigger re-check on auth events
+
+  if (loading || !hasCheckedSession) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
         <main className="flex min-h-screen flex-col items-center justify-center p-24">
           <h1 className="text-6xl font-extrabold text-pink-600 dark:text-pink-400">
-            Loading...
+            {loading ? "Loading..." : "Checking authentication..."}
           </h1>
         </main>
       </div>
@@ -98,32 +127,45 @@ export default function Home() {
     );
   }
 
+  // Display content only if user is logged in
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+        <main className="flex min-h-screen flex-col items-center justify-center p-24 text-center">
+          <h1 className="text-5xl font-extrabold text-pink-600 dark:text-pink-400 mb-8">
+            Please sign in to view content
+          </h1>
+          {/* A button to manually trigger sign-in if automatic fails or user cancels */}
+          <button
+            onClick={handleGoogleSignIn}
+            className="px-6 py-3 bg-blue-500 text-white rounded-md text-xl hover:bg-blue-600 transition-colors"
+          >
+            Sign in with Google
+          </button>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center bg-zinc-50 font-sans dark:bg-black">
       <main className="container mx-auto p-4">
-        <h1 className="text-5xl font-extrabold text-pink-600 dark:text-pink-400 mb-8 text-center">
-          The Humor Project Captions
-        </h1>
-        {user ? (
-          <div className="mb-4 text-center">
-            <p className="text-gray-800 dark:text-white">Welcome, {user.email}!</p>
-            <button
-              onClick={handleSignOut}
-              className="mt-2 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-            >
-              Sign Out
-            </button>
-          </div>
-        ) : (
-          <div className="mb-4 text-center">
-            <button
-              onClick={handleGoogleSignIn}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-            >
-              Sign in with Google
-            </button>
-          </div>
-        )}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-5xl font-extrabold text-pink-600 dark:text-pink-400 text-center flex-grow">
+            The Humor Project Captions
+          </h1>
+          {user && (
+            <div className="text-right">
+              <p className="text-gray-800 dark:text-white mb-2">Welcome, {user.email}!</p>
+              <button
+                onClick={handleSignOut}
+                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {captions && captions.map((caption) => (
             <div key={caption.id} className="bg-white dark:bg-zinc-800 rounded-lg shadow-md overflow-hidden">
