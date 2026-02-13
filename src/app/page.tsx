@@ -3,11 +3,13 @@
 import { supabase } from "./utils/supabase";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { User } from "@supabase/supabase-js";
 
 export default function Home() {
   const [captions, setCaptions] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const fetchCaptions = async () => {
@@ -29,7 +31,48 @@ export default function Home() {
     };
 
     fetchCaptions();
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+
+    return () => {
+      authListener?.unsubscribe();
+    };
   }, []);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: process.env.NEXT_PUBLIC_AUTH_CALLBACK_URL || 'https://thehumorproject1.vercel.app/auth/callback',
+        },
+      });
+      if (error) {
+        setError(error.message);
+      }
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        setError(error.message);
+      }
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
 
   if (loading) {
     return (
@@ -61,6 +104,26 @@ export default function Home() {
         <h1 className="text-5xl font-extrabold text-pink-600 dark:text-pink-400 mb-8 text-center">
           The Humor Project Captions
         </h1>
+        {user ? (
+          <div className="mb-4 text-center">
+            <p className="text-gray-800 dark:text-white">Welcome, {user.email}!</p>
+            <button
+              onClick={handleSignOut}
+              className="mt-2 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+            >
+              Sign Out
+            </button>
+          </div>
+        ) : (
+          <div className="mb-4 text-center">
+            <button
+              onClick={handleGoogleSignIn}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              Sign in with Google
+            </button>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {captions && captions.map((caption) => (
             <div key={caption.id} className="bg-white dark:bg-zinc-800 rounded-lg shadow-md overflow-hidden">
