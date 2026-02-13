@@ -8,27 +8,43 @@ export default function AuthCallback() {
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Explicitly log for debugging
+    console.log('AuthCallback page loaded. Checking session...');
+
+    const handleSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error('Error fetching session:', error.message);
+        router.push('/error?message=' + error.message); // Redirect to an error page
+        return;
+      }
+
       if (session) {
-        // User is authenticated, redirect to home page
+        console.log('Session found, redirecting to home.');
         router.push('/');
       } else {
-        // Handle cases where session is not found or error
-        // (e.g., redirect to login or show an error message)
-        router.push('/login'); // Redirect to a login page or homepage
+        console.log('No session found, redirecting to login.');
+        // Consider creating a dedicated /login page or redirecting to home and handling unauthenticated state there
+        router.push('/login'); // Assuming a /login page exists or unauthenticated state is handled on home
       }
-    });
+    };
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    handleSession();
+
+    // Listener for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session);
         if (session) {
+          console.log('Session active from listener, redirecting to home.');
           router.push('/');
         }
       }
     );
 
     return () => {
-      authListener?.subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, [router]);
 
