@@ -7,12 +7,12 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookies().get(name)?.value
+        async get(name: string) {
+          return (await cookies()).get(name)?.value
         },
-        set(name: string, value: string, options: any) {
+        async set(name: string, value: string, options: any) {
           try {
-            cookies().set({ name, value, ...options })
+            (await cookies()).set({ name, value, ...options })
           } catch (error) {
             // The `cookies().set()` method can only be called in a Server Component or Route Handler.
             // This error is typically caused by an attempt to set a cookie from a Client Component
@@ -20,9 +20,9 @@ export function createClient() {
             // consider using a Server Action or an Route Handler.
           }
         },
-        remove(name: string, options: any) {
+        async remove(name: string, options: any) {
           try {
-            cookies().set({ name, value: '', ...options })
+            (await cookies()).set({ name, value: '', ...options })
           } catch (error) {
             // The `cookies().set()` method can only be called in a Server Component or Route Handler.
             // This error is typically caused by an attempt to set a cookie from a Client Component
