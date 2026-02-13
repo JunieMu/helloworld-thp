@@ -28,7 +28,7 @@ export default function AuthCallback() {
     );
 
     return () => {
-      authListener?.unsubscribe();
+      authListener?.subscription.unsubscribe();
     };
   }, [router]);
 
