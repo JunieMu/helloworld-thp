@@ -180,11 +180,34 @@ export default function Home() {
     );
   }
 
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        setError(error.message);
+      } else {
+        setUser(null);
+        setCaptions(null);
+        setHasCheckedSession(false);
+      }
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
+
   // If logged in, show Rating Page
   const currentCaption = captions?.[currentIndex];
 
   return (
     <div className="flex min-h-screen items-start justify-center font-sans" style={{ backgroundColor: '#FAF4EA', paddingTop: '2rem', paddingLeft: '2rem' }}>
+      {/* Sign Out Button (Fixed at top right) */}
+      <button
+        onClick={handleSignOut}
+        className="fixed top-6 right-6 px-4 py-2 bg-white/50 hover:bg-white/80 border border-gray-300 rounded-full text-sm font-semibold text-gray-700 transition-colors z-50"
+      >
+        SIGN OUT
+      </button>
+
       <div className="flex flex-col md:flex-row items-start w-full max-w-7xl p-8">
         {/* Left Side: Title */}
         <div className="flex-1 mb-8 md:mb-0">
