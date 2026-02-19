@@ -2,8 +2,23 @@
 
 import { supabase } from "./utils/supabase";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { User } from "@supabase/supabase-js";
+
+// Thumbs Up SVG
+const ThumbsUpIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M7 10v12" />
+    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
+  </svg>
+);
+
+// Thumbs Down SVG
+const ThumbsDownIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 14V2" />
+    <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" />
+  </svg>
+);
 
 export default function Home() {
   const [captions, setCaptions] = useState<any[] | null>(null);
@@ -11,10 +26,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [hasCheckedSession, setHasCheckedSession] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleGoogleSignIn = async () => {
     try {
-      setLoading(true); // Indicate loading while redirecting
+      setLoading(true);
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -25,25 +41,36 @@ export default function Home() {
         setError(error.message);
         setLoading(false);
       }
-      // If no error, redirect happens automatically, so loading remains true
     } catch (error: any) {
       setError(error.message);
       setLoading(false);
     }
   };
 
-  const handleSignOut = async () => {
+  const handleVote = async (value: number) => {
+    if (!user || !captions || !captions[currentIndex]) return;
+
+    const currentCaption = captions[currentIndex];
+
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase
+        .from('caption_votes')
+        .insert({
+          vote_value: value,
+          profile_id: user.id,
+          caption_id: currentCaption.id,
+          created_datetime_utc: new Date().toISOString()
+        });
+
       if (error) {
-        setError(error.message);
+        console.error('Error voting:', error);
+        alert('Error submitting vote: ' + error.message);
       } else {
-        setUser(null); // Clear user state on sign out
-        setCaptions(null); // Clear captions
-        setHasCheckedSession(false); // Reset session check to trigger new sign-in attempt
+        // Move to next caption
+        setCurrentIndex((prev) => prev + 1);
       }
-    } catch (error: any) {
-      setError(error.message);
+    } catch (err: any) {
+      console.error('Error in handleVote:', err);
     }
   };
 
@@ -59,13 +86,10 @@ export default function Home() {
         return;
       }
 
-      setUser(session?.user || null);
+      const currentUser = session?.user || null;
+      setUser(currentUser);
 
-      if (!session) {
-        console.log("No active session found.");
-        // Removed automatic redirect to sign in
-      } else {
-        // Only fetch captions if a user is logged in
+      if (currentUser) {
         const { data, error: captionsError } = await supabase
           .from("captions")
           .select(`
@@ -74,14 +98,16 @@ export default function Home() {
               url,
               image_description
             )
-          `);
+          `)
+          .eq('is_public', true);
+
         if (captionsError) {
           setError(captionsError.message);
         } else {
           setCaptions(data);
         }
-        setLoading(false);
       }
+      setLoading(false);
       setHasCheckedSession(true);
     };
 
@@ -93,7 +119,7 @@ export default function Home() {
       (event, session) => {
         setUser(session?.user || null);
         if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-          setHasCheckedSession(false); // Re-check session and re-fetch data on auth change
+          setHasCheckedSession(false);
         }
       }
     );
@@ -101,33 +127,26 @@ export default function Home() {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [hasCheckedSession]); // Rerun effect when hasCheckedSession changes to trigger re-check on auth events
+  }, [hasCheckedSession]);
 
   if (loading || !hasCheckedSession) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-        <main className="flex min-h-screen flex-col items-center justify-center p-24">
-          <h1 className="text-6xl font-extrabold text-pink-600 dark:text-pink-400">
-            {loading ? "Loading..." : "Checking authentication..."}
-          </h1>
-        </main>
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF4EA] font-sans">
+        <h1 className="text-4xl font-bold text-gray-800">Loading...</h1>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-        <main className="flex min-h-screen flex-col items-center justify-center p-24">
-          <h1 className="text-6xl font-extrabold text-red-600 dark:text-red-400">
-            Error: {error}
-          </h1>
-        </main>
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF4EA] font-sans">
+        <h1 className="text-4xl font-bold text-red-600">Error: {error}</h1>
       </div>
     );
   }
 
-  // Display content only if user is logged in
+  // If not logged in, show Landing Page
+  if (!user) {
     return (
       <div className="flex min-h-screen items-start justify-center font-sans" style={{ backgroundColor: '#FAF4EA', paddingTop: '2rem', paddingLeft: '2rem' }}>
         <div className="flex flex-col md:flex-row items-start w-full max-w-7xl p-8">
@@ -141,15 +160,15 @@ export default function Home() {
             <div
               className="p-10 rounded-lg shadow-xl text-center max-w-sm w-full"
               style={{
-                backgroundColor: 'white', // Base for grid
+                backgroundColor: 'white',
                 backgroundImage: 'linear-gradient(to right, #f0f0f0 1px, transparent 1px), linear-gradient(to bottom, #f0f0f0 1px, transparent 1px)',
-                backgroundSize: '30px 30px', // Increased size
+                backgroundSize: '30px 30px',
               }}
             >
               <h2 className="text-3xl font-bold mb-8 text-gray-800">START RATING MEMES</h2>
               <button
                 onClick={handleGoogleSignIn}
-                className="w-full px-6 py-4 rounded-full text-xl font-philosopher text-gray-800 transition-colors active:scale-95 duration-100" // Added pressing animation
+                className="w-full px-6 py-4 rounded-full text-xl font-philosopher text-gray-800 transition-colors active:scale-95 duration-100"
                 style={{ backgroundColor: '#CBE6FF' }}
               >
                 SIGN IN
@@ -159,46 +178,70 @@ export default function Home() {
         </div>
       </div>
     );
+  }
+
+  // If logged in, show Rating Page
+  const currentCaption = captions?.[currentIndex];
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="container mx-auto p-4">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-5xl font-extrabold text-pink-600 dark:text-pink-400 text-center flex-grow">
-            The Humor Project Captions
-          </h1>
-          {user && (
-            <div className="text-right">
-              <p className="text-gray-800 dark:text-white mb-2">Welcome, {user?.email}!</p>
-              <button
-                onClick={handleSignOut}
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-              >
-                Sign Out
-              </button>
+    <div className="flex min-h-screen items-start justify-center font-sans" style={{ backgroundColor: '#FAF4EA', paddingTop: '2rem', paddingLeft: '2rem' }}>
+      <div className="flex flex-col md:flex-row items-start w-full max-w-7xl p-8">
+        {/* Left Side: Title */}
+        <div className="flex-1 mb-8 md:mb-0">
+          <h1 className="text-8xl font-bold font-paprika text-gray-800">Humor Study</h1>
+        </div>
+
+        {/* Right Side: Rating View */}
+        <div className="flex-[2] flex justify-center items-center gap-12 mt-12">
+          {currentCaption ? (
+            <div className="flex items-center gap-12">
+              {/* Voting Buttons (Left of image) */}
+              <div className="flex flex-col gap-6">
+                <button
+                  onClick={() => handleVote(1)}
+                  className="w-20 h-20 rounded-full flex items-center justify-center transition-all active:scale-90 hover:brightness-105 shadow-md"
+                  style={{ backgroundColor: '#a0d0ff' }}
+                  title="Thumbs Up"
+                >
+                  <ThumbsUpIcon />
+                </button>
+                <button
+                  onClick={() => handleVote(-1)}
+                  className="w-20 h-20 rounded-full flex items-center justify-center transition-all active:scale-90 hover:brightness-105 shadow-md"
+                  style={{ backgroundColor: '#dc99b5' }}
+                  title="Thumbs Down"
+                >
+                  <ThumbsDownIcon />
+                </button>
+              </div>
+
+              {/* Meme Container */}
+              <div className="flex flex-col items-center">
+                <div className="w-[500px] h-[500px] bg-white rounded-xl shadow-2xl overflow-hidden flex items-center justify-center border-[12px] border-white">
+                  {currentCaption.images?.url ? (
+                    <img
+                      src={currentCaption.images.url}
+                      alt={currentCaption.images.image_description || "Meme"}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="text-gray-400 font-bold text-xl">No Image Available</div>
+                  )}
+                </div>
+                {/* Caption Text Below Image */}
+                <p className="mt-8 text-3xl font-bold text-gray-800 text-center max-w-[500px] leading-tight">
+                  {currentCaption.content}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center p-12 bg-white rounded-2xl shadow-xl">
+              <h2 className="text-3xl font-bold text-gray-800">All caught up!</h2>
+              <p className="text-gray-600 mt-4 text-xl">You have rated all available captions.</p>
             </div>
           )}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {captions && captions!.map((caption) => (
-            <div key={caption.id} className="bg-white dark:bg-zinc-800 rounded-lg shadow-md overflow-hidden">
-              {caption.images && caption.images.url && (
-                <Image
-                  src={caption.images.url}
-                  alt={caption.images.image_description || "Caption image"}
-                  width={400}
-                  height={200}
-                  className="w-full h-48 object-cover"
-                />
-              )}
-              <div className="p-4">
-                <p className="text-gray-800 dark:text-white">{caption.content}</p>
-                <p className="text-gray-500 dark:text-gray-400 mt-2">Likes: {caption.like_count}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
