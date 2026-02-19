@@ -151,8 +151,8 @@ export default function Home() {
   // If not logged in, show Landing Page
   if (!user) {
     return (
-      <div className="flex min-h-screen items-start justify-center font-philosopher" style={{ backgroundColor: '#FAF4EA', paddingTop: '2rem', paddingLeft: '2rem' }}>
-        <div className="flex flex-col md:flex-row items-start w-full max-w-7xl p-8">
+      <div className="flex min-h-screen items-center justify-center font-philosopher" style={{ backgroundColor: '#FAF4EA', paddingLeft: '2rem' }}>
+        <div className="flex flex-col md:flex-row items-center w-full max-w-7xl p-8">
           {/* Left Side: Title */}
           <div className="flex-1 mb-8 md:mb-0">
             <h1 className="text-8xl font-bold font-paprika text-gray-800">Humor Study</h1>
