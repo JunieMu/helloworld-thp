@@ -103,8 +103,11 @@ export default function Home() {
 
         if (captionsError) {
           setError(captionsError.message);
-        } else {
-          setCaptions(data);
+        } else if (data) {
+          // Randomly select 5 captions
+          const shuffled = [...data].sort(() => 0.5 - Math.random());
+          const selected = shuffled.slice(0, 5);
+          setCaptions(selected);
         }
       }
       setLoading(false);
