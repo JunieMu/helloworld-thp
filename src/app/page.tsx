@@ -128,24 +128,37 @@ export default function Home() {
   }
 
   // Display content only if user is logged in
-  if (!user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-        <main className="flex min-h-screen flex-col items-center justify-center p-24 text-center">
-          <h1 className="text-5xl font-extrabold text-pink-600 dark:text-pink-400 mb-8">
-            Please sign in to view content
-          </h1>
-          {/* A button to manually trigger sign-in if automatic fails or user cancels */}
-          <button
-            onClick={handleGoogleSignIn}
-            className="px-6 py-3 bg-blue-500 text-white rounded-md text-xl hover:bg-blue-600 transition-colors"
-          >
-            Sign in with Google
-          </button>
-        </main>
+      <div className="flex min-h-screen items-center justify-center font-sans" style={{ backgroundColor: '#FAF4EA' }}>
+        <div className="flex flex-col md:flex-row items-center justify-center w-full max-w-7xl p-8">
+          {/* Left Side: Title */}
+          <div className="flex-1 text-center md:text-left mb-8 md:mb-0">
+            <h1 className="text-8xl font-bold font-[var(--font-paprika)] text-gray-800">Humor Study</h1>
+          </div>
+
+          {/* Right Side: Centered Card */}
+          <div className="flex-1 flex justify-center items-center">
+            <div
+              className="p-10 rounded-lg shadow-xl text-center max-w-sm w-full"
+              style={{
+                backgroundColor: 'white', // Base for grid
+                backgroundImage: 'linear-gradient(to right, #f0f0f0 1px, transparent 1px), linear-gradient(to bottom, #f0f0f0 1px, transparent 1px)',
+                backgroundSize: '20px 20px',
+              }}
+            >
+              <h2 className="text-3xl font-bold mb-8 text-gray-800">START RATING MEMES</h2>
+              <button
+                onClick={handleGoogleSignIn}
+                className="w-full px-6 py-4 rounded-full text-xl font-[var(--font-philosopher)] text-gray-800 transition-colors"
+                style={{ backgroundColor: '#CBE6FF' }}
+              >
+                SIGN IN
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
-  }
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-zinc-50 font-sans dark:bg-black">
