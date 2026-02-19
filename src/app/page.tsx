@@ -131,7 +131,7 @@ export default function Home() {
 
   if (loading || !hasCheckedSession) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAF4EA] font-sans">
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF4EA] font-philosopher">
         <h1 className="text-4xl font-bold text-gray-800">Loading...</h1>
       </div>
     );
@@ -139,7 +139,7 @@ export default function Home() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAF4EA] font-sans">
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF4EA] font-philosopher">
         <h1 className="text-4xl font-bold text-gray-800">Error: {error}</h1>
       </div>
     );
@@ -148,7 +148,7 @@ export default function Home() {
   // If not logged in, show Landing Page
   if (!user) {
     return (
-      <div className="flex min-h-screen items-start justify-center font-sans" style={{ backgroundColor: '#FAF4EA', paddingTop: '2rem', paddingLeft: '2rem' }}>
+      <div className="flex min-h-screen items-start justify-center font-philosopher" style={{ backgroundColor: '#FAF4EA', paddingTop: '2rem', paddingLeft: '2rem' }}>
         <div className="flex flex-col md:flex-row items-start w-full max-w-7xl p-8">
           {/* Left Side: Title */}
           <div className="flex-1 mb-8 md:mb-0">
@@ -199,11 +199,11 @@ export default function Home() {
   const currentCaption = captions?.[currentIndex];
 
   return (
-    <div className="flex min-h-screen items-start justify-center font-sans" style={{ backgroundColor: '#FAF4EA', paddingTop: '2rem', paddingLeft: '2rem' }}>
+    <div className="flex min-h-screen items-start justify-center font-philosopher" style={{ backgroundColor: '#FAF4EA', paddingTop: '2rem', paddingLeft: '2rem' }}>
       {/* Sign Out Button (Fixed at top right) */}
       <button
         onClick={handleSignOut}
-        className="fixed top-6 right-6 px-4 py-2 bg-white/50 hover:bg-white/80 border border-gray-300 rounded-full text-sm font-semibold text-gray-700 transition-colors z-50"
+        className="fixed top-6 right-6 px-4 py-2 bg-white/50 hover:bg-white/80 border border-gray-300 rounded-full text-sm font-semibold text-gray-700 transition-colors z-50 font-philosopher"
       >
         SIGN OUT
       </button>

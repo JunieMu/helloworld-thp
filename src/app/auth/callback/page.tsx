@@ -49,9 +49,9 @@ export default function AuthCallback() {
   }, [router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex min-h-screen items-center justify-center bg-[#FAF4EA] font-philosopher">
       <main className="flex min-h-screen flex-col items-center justify-center p-24">
-        <h1 className="text-4xl font-extrabold text-pink-600 dark:text-pink-400">
+        <h1 className="text-4xl font-bold text-gray-800">
           Processing Authentication...
         </h1>
       </main>
