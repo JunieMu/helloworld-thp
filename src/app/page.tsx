@@ -140,7 +140,7 @@ export default function Home() {
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FAF4EA] font-sans">
-        <h1 className="text-4xl font-bold text-red-600">Error: {error}</h1>
+        <h1 className="text-4xl font-bold text-gray-800">Error: {error}</h1>
       </div>
     );
   }

@@ -10,6 +10,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-paprika: var(--font-paprika);
+  --font-philosopher: var(--font-philosopher);
 }
 
 @media (prefers-color-scheme: dark) {
