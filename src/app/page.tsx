@@ -104,9 +104,9 @@ export default function Home() {
         if (captionsError) {
           setError(captionsError.message);
         } else if (data) {
-          // Randomly select 5 captions
+          // Randomly select 100 captions
           const shuffled = [...data].sort(() => 0.5 - Math.random());
-          const selected = shuffled.slice(0, 5);
+          const selected = shuffled.slice(0, 100);
           setCaptions(selected);
         }
       }
