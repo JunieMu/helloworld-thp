@@ -62,8 +62,8 @@ export default function Home() {
       setUser(session?.user || null);
 
       if (!session) {
-        console.log("No active session found. Initiating Google sign-in...");
-        await handleGoogleSignIn(); // Automatically redirect to sign in
+        console.log("No active session found.");
+        // Removed automatic redirect to sign in
       } else {
         // Only fetch captions if a user is logged in
         const { data, error: captionsError } = await supabase
@@ -129,11 +129,11 @@ export default function Home() {
 
   // Display content only if user is logged in
     return (
-      <div className="flex min-h-screen items-center justify-center font-sans" style={{ backgroundColor: '#FAF4EA' }}>
-        <div className="flex flex-col md:flex-row items-center justify-center w-full max-w-7xl p-8">
+      <div className="flex min-h-screen items-start justify-center font-sans" style={{ backgroundColor: '#FAF4EA', paddingTop: '2rem', paddingLeft: '2rem' }}>
+        <div className="flex flex-col md:flex-row items-start w-full max-w-7xl p-8">
           {/* Left Side: Title */}
-          <div className="flex-1 text-center md:text-left mb-8 md:mb-0">
-            <h1 className="text-8xl font-bold font-[var(--font-paprika)] text-gray-800">Humor Study</h1>
+          <div className="flex-1 mb-8 md:mb-0">
+            <h1 className="text-8xl font-bold font-paprika text-gray-800">Humor Study</h1>
           </div>
 
           {/* Right Side: Centered Card */}
@@ -143,13 +143,13 @@ export default function Home() {
               style={{
                 backgroundColor: 'white', // Base for grid
                 backgroundImage: 'linear-gradient(to right, #f0f0f0 1px, transparent 1px), linear-gradient(to bottom, #f0f0f0 1px, transparent 1px)',
-                backgroundSize: '20px 20px',
+                backgroundSize: '30px 30px', // Increased size
               }}
             >
               <h2 className="text-3xl font-bold mb-8 text-gray-800">START RATING MEMES</h2>
               <button
                 onClick={handleGoogleSignIn}
-                className="w-full px-6 py-4 rounded-full text-xl font-[var(--font-philosopher)] text-gray-800 transition-colors"
+                className="w-full px-6 py-4 rounded-full text-xl font-philosopher text-gray-800 transition-colors active:scale-95 duration-100" // Added pressing animation
                 style={{ backgroundColor: '#CBE6FF' }}
               >
                 SIGN IN
