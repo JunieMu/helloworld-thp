@@ -240,6 +240,9 @@ export default function Home() {
 
               {/* Meme Container */}
               <div className="flex flex-col items-center">
+                <p className="mb-4 text-lg text-gray-500 font-philosopher">
+                  {captions.length - currentIndex} captions remaining
+                </p>
                 <div className="w-[500px] h-[500px] bg-white rounded-xl shadow-2xl overflow-hidden flex items-center justify-center border-[12px] border-white">
                   {currentCaption.images?.url ? (
                     <img
