@@ -169,7 +169,7 @@ export default function Home() {
           </h1>
           {user && (
             <div className="text-right">
-              <p className="text-gray-800 dark:text-white mb-2">Welcome, {user.email}!</p>
+              <p className="text-gray-800 dark:text-white mb-2">Welcome, {user?.email}!</p>
               <button
                 onClick={handleSignOut}
                 className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
