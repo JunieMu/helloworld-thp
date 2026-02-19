@@ -180,7 +180,7 @@ export default function Home() {
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {captions && captions.map((caption) => (
+          {captions && captions!.map((caption) => (
             <div key={caption.id} className="bg-white dark:bg-zinc-800 rounded-lg shadow-md overflow-hidden">
               {caption.images && caption.images.url && (
                 <Image
