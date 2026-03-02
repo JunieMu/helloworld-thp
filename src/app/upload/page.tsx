@@ -9,10 +9,13 @@ export default function UploadPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [status, setStatus] = useState<string>("");
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [captions, setCaptions] = useState<string[]>([]);
+  const [captions, setCaptions] = useState<any[]>([]);
   const router = useRouter();
+
+  const API_BASE_URL = "https://api.almostcrackd.ai";
 
   useEffect(() => {
     const checkUser = async () => {
@@ -32,6 +35,8 @@ export default function UploadPage() {
       const file = e.target.files[0];
       setImage(file);
       setPreview(URL.createObjectURL(file));
+      setCaptions([]);
+      setStatus("");
     }
   };
 
@@ -39,18 +44,78 @@ export default function UploadPage() {
     if (!image) return;
     
     setUploading(true);
-    // Placeholder for the POST request to https://api.almostcrackd.ai
-    console.log("Uploading to api.almostcrackd.ai...");
-    
-    // Simulate API call
-    setTimeout(() => {
-      setCaptions([
-        "When you finally finish the sidebar task.",
-        "That moment when the API returns 200 OK.",
-        "React state management be like..."
-      ]);
+    setCaptions([]);
+    setStatus("Getting upload URL...");
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No active session");
+      const token = session.access_token;
+
+      // Step 1: Generate Presigned URL
+      const presignedRes = await fetch(`${API_BASE_URL}/pipeline/generate-presigned-url`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ contentType: image.type })
+      });
+
+      if (!presignedRes.ok) throw new Error("Failed to generate presigned URL");
+      const { presignedUrl, cdnUrl } = await presignedRes.json();
+
+      // Step 2: Upload Image Bytes to presignedUrl
+      setStatus("Uploading image...");
+      const uploadRes = await fetch(presignedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": image.type
+        },
+        body: image
+      });
+
+      if (!uploadRes.ok) throw new Error("Failed to upload image to storage");
+
+      // Step 3: Register Image URL in the Pipeline
+      setStatus("Registering image...");
+      const registerRes = await fetch(`${API_BASE_URL}/pipeline/upload-image-from-url`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          imageUrl: cdnUrl,
+          isCommonUse: false
+        })
+      });
+
+      if (!registerRes.ok) throw new Error("Failed to register image");
+      const { imageId } = await registerRes.json();
+
+      // Step 4: Generate Captions
+      setStatus("Generating captions...");
+      const captionsRes = await fetch(`${API_BASE_URL}/pipeline/generate-captions`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ imageId })
+      });
+
+      if (!captionsRes.ok) throw new Error("Failed to generate captions");
+      const data = await captionsRes.json();
+      
+      setCaptions(Array.isArray(data) ? data : []);
+      setStatus("Done!");
+    } catch (err: any) {
+      console.error("Pipeline error:", err);
+      setStatus(`Error: ${err.message}`);
+    } finally {
       setUploading(false);
-    }, 2000);
+    }
   };
 
   const handleSignOut = async () => {
@@ -112,16 +177,23 @@ export default function UploadPage() {
             />
           </div>
 
-          {image && (
-            <button
-              onClick={handleUpload}
-              disabled={uploading}
-              className="px-12 py-4 rounded-full text-2xl font-bold transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#CBE6FF', color: '#1f2937' }}
-            >
-              {uploading ? 'GENERATING...' : 'GENERATE CAPTIONS'}
-            </button>
-          )}
+          <div className="flex flex-col items-center gap-4">
+            {image && (
+              <button
+                onClick={handleUpload}
+                disabled={uploading}
+                className="px-12 py-4 rounded-full text-2xl font-bold transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: '#CBE6FF', color: '#1f2937' }}
+              >
+                {uploading ? 'PROCESSING...' : 'GENERATE CAPTIONS'}
+              </button>
+            )}
+            {status && (
+              <p className={`text-xl font-bold ${status.startsWith('Error') ? 'text-red-500' : 'text-gray-600'}`}>
+                {status}
+              </p>
+            )}
+          </div>
 
           {captions.length > 0 && (
             <div className="w-full max-w-2xl mt-8 flex flex-col gap-4">
@@ -131,7 +203,7 @@ export default function UploadPage() {
                   key={index} 
                   className="p-6 bg-white rounded-2xl shadow-md border-l-8 border-[#CBE6FF] text-xl font-bold text-gray-800"
                 >
-                  {caption}
+                  {caption.content || caption}
                 </div>
               ))}
             </div>
