@@ -1,0 +1,143 @@
+'use client';
+
+import { supabase } from "../utils/supabase";
+import { useEffect, useState } from "react";
+import { User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
+
+export default function UploadPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [image, setImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [captions, setCaptions] = useState<string[]>([]);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/');
+      } else {
+        setUser(session.user);
+      }
+      setLoading(false);
+    };
+    checkUser();
+  }, [router]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImage(file);
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!image) return;
+    
+    setUploading(true);
+    // Placeholder for the POST request to https://api.almostcrackd.ai
+    console.log("Uploading to api.almostcrackd.ai...");
+    
+    // Simulate API call
+    setTimeout(() => {
+      setCaptions([
+        "When you finally finish the sidebar task.",
+        "That moment when the API returns 200 OK.",
+        "React state management be like..."
+      ]);
+      setUploading(false);
+    }, 2000);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF4EA] font-philosopher pl-64">
+        <h1 className="text-4xl font-bold text-gray-800">Loading...</h1>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center font-philosopher pl-64" style={{ backgroundColor: '#FAF4EA' }}>
+      {/* Sign Out Button */}
+      <button
+        onClick={handleSignOut}
+        className="fixed top-6 right-6 px-4 py-2 bg-white/50 hover:bg-white/80 border border-gray-300 rounded-full text-sm font-semibold text-gray-700 transition-colors z-50 font-philosopher"
+      >
+        SIGN OUT
+      </button>
+
+      <div className="flex flex-col md:flex-row items-center w-full max-w-7xl p-8">
+        {/* Left Side: Title */}
+        <div className="flex-1 mb-8 md:mb-0">
+          <h1 className="text-8xl font-bold font-paprika text-gray-800">Humor Study</h1>
+          <p className="mt-6 text-3xl font-bold text-gray-600 font-philosopher">
+            Upload & Caption
+          </p>
+        </div>
+
+        {/* Right Side: Upload View */}
+        <div className="flex-[2] flex flex-col items-center gap-8">
+          <div 
+            className="w-[500px] h-[500px] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col items-center justify-center border-[12px] border-white relative group cursor-pointer"
+            onClick={() => document.getElementById('fileInput')?.click()}
+          >
+            {preview ? (
+              <img src={preview} alt="Preview" className="w-full h-full object-contain" />
+            ) : (
+              <div className="flex flex-col items-center text-gray-400">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-4">
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                  <circle cx="9" cy="9" r="2"/>
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                </svg>
+                <span className="text-xl font-bold">Click to select image</span>
+              </div>
+            )}
+            <input 
+              id="fileInput"
+              type="file" 
+              className="hidden" 
+              accept="image/*"
+              onChange={handleImageChange}
+            />
+          </div>
+
+          {image && (
+            <button
+              onClick={handleUpload}
+              disabled={uploading}
+              className="px-12 py-4 rounded-full text-2xl font-bold transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: '#CBE6FF', color: '#1f2937' }}
+            >
+              {uploading ? 'GENERATING...' : 'GENERATE CAPTIONS'}
+            </button>
+          )}
+
+          {captions.length > 0 && (
+            <div className="w-full max-w-2xl mt-8 flex flex-col gap-4">
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">Resulting Captions:</h3>
+              {captions.map((caption, index) => (
+                <div 
+                  key={index} 
+                  className="p-6 bg-white rounded-2xl shadow-md border-l-8 border-[#CBE6FF] text-xl font-bold text-gray-800"
+                >
+                  {caption}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

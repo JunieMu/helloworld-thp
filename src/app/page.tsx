@@ -202,7 +202,7 @@ export default function Home() {
   const currentCaption = captions?.[currentIndex];
 
   return (
-    <div className="flex min-h-screen items-center justify-center font-philosopher" style={{ backgroundColor: '#FAF4EA', paddingLeft: '2rem' }}>
+    <div className="flex min-h-screen items-center justify-center font-philosopher pl-64" style={{ backgroundColor: '#FAF4EA' }}>
       {/* Sign Out Button (Fixed at top right) */}
       <button
         onClick={handleSignOut}
