@@ -59,7 +59,8 @@ export default function Home() {
           vote_value: value,
           profile_id: user.id,
           caption_id: currentCaption.id,
-          created_datetime_utc: new Date().toISOString()
+          created_by_user_id: user.id,
+          modified_by_user_id: user.id
         });
 
       if (error) {
