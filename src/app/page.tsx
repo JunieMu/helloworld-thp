@@ -105,8 +105,13 @@ export default function Home() {
         if (captionsError) {
           setError(captionsError.message);
         } else if (data) {
-          // Randomly select 100 captions
-          const shuffled = [...data].sort(() => 0.5 - Math.random());
+          // Filter to ensure we have both content and an image URL
+          const validCaptions = data.filter(
+            (c: any) => c.content && c.content.trim() !== "" && c.images && c.images.url
+          );
+
+          // Randomly select 100 captions from the valid ones
+          const shuffled = [...validCaptions].sort(() => 0.5 - Math.random());
           const selected = shuffled.slice(0, 100);
           setCaptions(selected);
         }
