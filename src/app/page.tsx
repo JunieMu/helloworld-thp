@@ -31,18 +31,22 @@ export default function Home() {
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: process.env.NEXT_PUBLIC_AUTH_CALLBACK_URL || 'https://thehumorproject1.vercel.app/auth/callback',
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (error) {
         setError(error.message);
         setLoading(false);
       }
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An unknown error occurred');
+      }
       setLoading(false);
     }
   };
