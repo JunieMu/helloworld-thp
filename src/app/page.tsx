@@ -27,6 +27,22 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [hasCheckedSession, setHasCheckedSession] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        setError(error.message);
+      } else {
+        setUser(null);
+        setCaptions(null);
+        setHasCheckedSession(false);
+      }
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     try {
@@ -52,9 +68,10 @@ export default function Home() {
   };
 
   const handleVote = async (value: number) => {
-    if (!user || !captions || !captions[currentIndex]) return;
+    if (!user || !captions || !captions[currentIndex] || isSubmitting) return;
 
     const currentCaption = captions[currentIndex];
+    setIsSubmitting(true);
 
     try {
       const { error } = await supabase
@@ -71,11 +88,12 @@ export default function Home() {
         console.error('Error voting:', error);
         alert('Error submitting vote: ' + error.message);
       } else {
-        // Move to next caption
         setCurrentIndex((prev) => prev + 1);
       }
     } catch (err: any) {
       console.error('Error in handleVote:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -193,21 +211,6 @@ export default function Home() {
     );
   }
 
-  const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        setError(error.message);
-      } else {
-        setUser(null);
-        setCaptions(null);
-        setHasCheckedSession(false);
-      }
-    } catch (error: any) {
-      setError(error.message);
-    }
-  };
-
   // If logged in, show Rating Page
   const currentCaption = captions?.[currentIndex];
 
@@ -235,7 +238,8 @@ export default function Home() {
               <div className="flex flex-col gap-6">
                 <button
                   onClick={() => handleVote(1)}
-                  className="w-20 h-20 rounded-full flex items-center justify-center transition-all active:scale-90 hover:brightness-105 shadow-md"
+                  disabled={isSubmitting}
+                  className="w-20 h-20 rounded-full flex items-center justify-center transition-all active:scale-90 hover:brightness-105 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: '#a0d0ff' }}
                   title="Thumbs Up"
                 >
@@ -243,7 +247,8 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => handleVote(-1)}
-                  className="w-20 h-20 rounded-full flex items-center justify-center transition-all active:scale-90 hover:brightness-105 shadow-md"
+                  disabled={isSubmitting}
+                  className="w-20 h-20 rounded-full flex items-center justify-center transition-all active:scale-90 hover:brightness-105 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: '#dc99b5' }}
                   title="Thumbs Down"
                 >
@@ -254,7 +259,7 @@ export default function Home() {
               {/* Meme Container */}
               <div className="flex flex-col items-center">
                 <p className="mb-4 text-lg text-gray-500 font-philosopher">
-                  {captions.length - currentIndex} captions remaining
+                  {captions.length - currentIndex} {captions.length - currentIndex === 1 ? 'caption' : 'captions'} remaining
                 </p>
                 <div className="w-[500px] h-[500px] bg-white rounded-xl shadow-2xl overflow-hidden flex items-center justify-center border-[12px] border-white">
                   {currentCaption.images?.url ? (
